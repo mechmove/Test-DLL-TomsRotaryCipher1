@@ -16,14 +16,14 @@ namespace Test_DLL_TomsRotaryCipher
              * This is a demo of how to use StoneAgeEncryptionService. Make sure you understand basic concepts and how
              * to pass in parms. StoneAgeEncryptionService is based on Enigma machine, but with added features, like unlimited 
              * rotors (some limitations apply), the ability to remove the reflector, bidirectional data flow, and 
-             * various skipping routines. And a unrelated but easy to use XOR stream (the Vernam cipher). A modern day concept 
-             * of Cipher Block Chaining also implemented which introduces the power of recursion with XOR. 
+             * various skipping routines. And an unrelated but easy to use XOR stream (the Vernam cipher). A modern day concept 
+             * of Cipher Block Chaining (CBC) also implemented which introduces the power of recursion with XOR. 
              * 
              * Please understand StoneAgeEncryptionService is for educational and entertainment purposes. Do not use without a 
              * complete understanding of the risk you might be taking with your data. StoneAgeEncryptionService has been tested 
-             * by the author, and should provide a good level of security, but there are very robust encryption methods that 
+             * by the author, and should some level of security, but there are other more robust encryption methods that 
              * are virtually unbreakable. I do believe with proper usage, StoneAgeEncryptionService can be used with other 
-             * available tools, but do your own testing to prove it out to yourself. 
+             * available tools, but do your own testing to prove it out for yourself. 
              * 
              * You should use more than one cipher method!
              * 
