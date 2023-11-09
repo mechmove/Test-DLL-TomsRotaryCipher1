@@ -108,7 +108,7 @@ namespace Test_DLL_TomsRotaryCipher
         {
             /* 
              * this test uses a small number of rotors (5), but uses Sigaba style rotor skipping and an independant XOR cipher
-             * Also used is Cipher Block Chaining. The security with only 5 rotors = 256^5 = ‭1,099,511,627,776‬, which is easily
+             * Also used is Cipher Block Chaining. The security with only 5 rotors = 256^5 = 1,099,511,627,776, which is easily
              * breakable, but the other items will increase security, but difficult to calculate odds of breaking.
              * 
              * Note there are a few additional steps to enhance security, XOR scrambling Rotor seeds and the message itself. This assumes
