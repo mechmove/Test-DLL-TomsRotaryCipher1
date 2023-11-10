@@ -106,7 +106,9 @@ namespace Test_DLL_TomsRotaryCipher
 
         public static void TestUsingSigabaSecureXOR(byte[] bIn)
         {
-            /* 
+            /* Read all about my adventures with Sigaba:
+             * https://homeitstuff.blogspot.com/2019/10/sigaba-natural-successor-to-engima.html
+             * 
              * this test uses a small number of rotors (5), but uses Sigaba style rotor skipping and an independant XOR cipher
              * Also used is Cipher Block Chaining. The security with only 5 rotors = 256^5 = 1,099,511,627,776, which is easily
              * breakable, but the other items will increase security, but difficult to calculate odds of breaking.
