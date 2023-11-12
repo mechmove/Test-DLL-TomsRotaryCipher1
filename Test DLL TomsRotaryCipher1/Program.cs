@@ -46,12 +46,13 @@ namespace Test_DLL_TomsRotaryCipher
 
             TestMaxRotors(bIn);
 
-            TestUsingSigabaSecureXOR(bIn);
+            //TestUsingSigabaSecureXOR(bIn);
 
-            TestUsingMaxKeyspace(bIn);
+            //TestUsingMaxKeyspace(bIn);
 
             // repeated single char, 16.8MB
             string sRepeat = new String('s', 16_777_216);
+            //string sRepeat = new String('s', 33_554_432);
             bIn = Encoding.ASCII.GetBytes(sRepeat);
 
             HidingInPlainSight(bIn);
@@ -80,6 +81,7 @@ namespace Test_DLL_TomsRotaryCipher
                 CBCMode.None);// leave off CBC mode for this test
 
             string CipherTxt = Encoding.Default.GetString(bCipherTxt);
+            //File.WriteAllText("test", CipherTxt);
 
             if (CipherTxt.IndexOf('s')<0)
             {
@@ -253,9 +255,27 @@ namespace Test_DLL_TomsRotaryCipher
              * You will need to create a small text file called “RotorsForTest.txt” 
              * in the bin\Debug folder containing number of rotors to test.
              * 
-             * this is for purposes of testing the EXE on other machines and changing the number of rotors without a GUI.
+             * this is for purposes of testing the EXE on other machines and changing 
+             * the number of rotors without a GUI.
              * 
              */
+
+            //int[,] NotchTurnoverPlan = new int[1494, 356541];
+
+            ////max size of int[,] = 532,675,562
+            //int[,] NotchTurnoverPlan;
+            ////NotchTurnoverPlan = new int[2, 266_337_781];
+            ////NotchTurnoverPlan = new int[3, 177_558_521];
+            ////NotchTurnoverPlan = new int[4, 133_168_890];
+
+            //byte[] bNext = new byte[2_130_702_268];  
+            int MaxRotorSize = (532_675_242 / bIn.Length) - 2;
+
+            if (Convert.ToInt32(File.ReadAllText("RotorsForTest.txt")) > MaxRotorSize)
+            {
+                Console.Write("Reduce MaxRotorSize to " + MaxRotorSize + Environment.NewLine + "Press Enter to continue..." + MaxRotorSize + Environment.NewLine);
+                Console.ReadKey();
+            }
 
             TomsRotaryCipher oTRC = new TomsRotaryCipher();
             oTRC.PopulateSeeds(); // generates required 32 bit words for seeds using RNGCryptoServiceProvider
