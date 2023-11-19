@@ -44,11 +44,11 @@ namespace Test_DLL_TomsRotaryCipher
             string PlainTxt = "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle - field of that war.We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live.It is altogether fitting and proper that we should do this.But, in a larger sense, we can not dedicate --we can not consecrate-- we can not hallow --this ground.The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract.The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced.It is rather for us to be here dedicated to the great task remaining before us-- that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion-- that we here highly resolve that these dead shall not have died in vain-- that this nation, under God, shall have a new birth of freedom-- and that government of the people, by the people, for the people, shall not perish from the earth.Abraham Lincoln November 19, 1863";
             bIn = Encoding.ASCII.GetBytes(PlainTxt);
 
-            TestMaxRotors(bIn);
+            StressTestMaxRotors(bIn);
 
-            //TestUsingSigabaSecureXOR(bIn);
+            TestUsingSigabaSecureXOR(bIn);
 
-            //TestUsingMaxKeyspace(bIn);
+            TestUsing1000Rotors(bIn);
 
             // repeated single char, 16.8MB
             string sRepeat = new String('s', 16_777_216);
@@ -57,6 +57,8 @@ namespace Test_DLL_TomsRotaryCipher
 
             HidingInPlainSight(bIn);
 
+            Console.Write("All tests are completed, press chk you results and any key to close this box" + Environment.NewLine);
+            Console.ReadKey();
         }
 
         public static void HidingInPlainSight(byte[] bIn)
@@ -85,7 +87,10 @@ namespace Test_DLL_TomsRotaryCipher
 
             if (CipherTxt.IndexOf('s')<0)
             {
-                Console.Write("HidingInPlainSight : s not found!" + Environment.NewLine);
+                Console.Write("HidingInPlainSight (with 3 rotors) : s not found [test was a SUCCESS]!" + Environment.NewLine);
+            } else
+            {
+                Console.Write("HidingInPlainSight (with 3 rotors) : [test was a FAILURE]!" + Environment.NewLine);
             }
 
             /*
@@ -104,7 +109,10 @@ namespace Test_DLL_TomsRotaryCipher
 
             if (CipherTxt.IndexOf('s')>0)
             {
-                Console.Write("HidingInPlainSight : s found!" + Environment.NewLine);
+                Console.Write("HidingInPlainSight (with 3 rotors) : s found [test was a SUCCESS]!" + Environment.NewLine);
+            } else
+            {
+                Console.Write("HidingInPlainSight (with 3 rotors) : [test was a FAILURE]!" + Environment.NewLine);
             }
 
 
@@ -201,12 +209,16 @@ namespace Test_DLL_TomsRotaryCipher
             // ************** END EXTRA measures ************** 
             if (bCipherTxtNew.SequenceEqual(bIn))
             {
-                Console.Write("TestUsingSigabaSecureXOR:" + Encoding.ASCII.GetString(bCipherTxtNew) + Environment.NewLine);
+                //Console.Write("TestUsingSigabaSecureXOR:" + Encoding.ASCII.GetString(bCipherTxtNew) + Environment.NewLine);
+                Console.Write("TestUsingSigabaSecureXOR : SUCCESS!" + Environment.NewLine);
+            
+            } else
+            {
+                Console.Write("TestUsingSigabaSecureXOR : FAILURE!" + Environment.NewLine);
             }
+}
 
-        }
-
-        public static void TestUsingMaxKeyspace(byte[] bIn)
+public static void TestUsing1000Rotors(byte[] bIn)
         {
             /* 
              * this test produces a keyspace of 256^1000 = 1.74e+2408, it will take a while to run.
@@ -244,11 +256,15 @@ namespace Test_DLL_TomsRotaryCipher
 
             if (bDecodedPlainTxt.SequenceEqual(bIn))
             {
-                Console.Write("TestUsingMaxKeyspace:" + Encoding.ASCII.GetString(bDecodedPlainTxt) + Environment.NewLine);
+                //Console.Write("TestUsingMaxKeyspace:" + Encoding.ASCII.GetString(bDecodedPlainTxt) + Environment.NewLine);
+                Console.Write("TestUsing1000Rotors: SUCCESS!" + Environment.NewLine);
+            } else
+            {
+                Console.Write("TestUsing1000Rotors: FAILURE!" + Environment.NewLine); 
             }
 
         }
-        public static void TestMaxRotors(byte[] bIn)
+        public static void StressTestMaxRotors(byte[] bIn)
         {
             /* 
              * this test is trying to determine how many rotors we can utilize.
@@ -314,8 +330,11 @@ namespace Test_DLL_TomsRotaryCipher
             Console.Write("end time DECODE:" + DateTime.Now + Environment.NewLine);
             if (bDecodedPlainTxt.SequenceEqual(bIn))
             {
-                Console.Write("TestUsingMaxKeyspace:" + Encoding.ASCII.GetString(bDecodedPlainTxt) + Environment.NewLine);
-                Console.ReadKey();
+                //Console.Write("TestUsingMaxKeyspace:" + Encoding.ASCII.GetString(bDecodedPlainTxt) + Environment.NewLine);
+                Console.Write("StressTestMaxRotors: SUCCESS!" + Environment.NewLine);
+            } else
+            {
+                Console.Write("StressTestMaxRotors: FAILURE!" + Environment.NewLine);
             }
 
         }
