@@ -112,7 +112,7 @@ namespace Test_DLL_TomsRotaryCipher
             bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext, repeated 's'
                 EnigmaMode.NoReflector,
-                NoReflectorMode.Forward,// choose any direction for rotors if reflector NOT used.
+                NoReflectorMode.Encipher,
                 CBCMode.None); // leave off CBC mode for this test
 
             CipherTxt = Encoding.Default.GetString(bCipherTxt);
@@ -139,7 +139,7 @@ namespace Test_DLL_TomsRotaryCipher
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext, repeated 's'
                 EnigmaMode.NoReflector,
-                NoReflectorMode.Forward, // 
+                NoReflectorMode.Encipher, 
                 CBCMode.None);// leave off CBC mode for this test
 
             Console.Write(ChkForRepeats(bCipherTxt, 100, "MessageSpacesymmetryTest"));
@@ -184,7 +184,7 @@ namespace Test_DLL_TomsRotaryCipher
                                                             // Hint, you may use Sequential with a larger rotor definition.
                 inputXORdSecure, // plaintext, already XOR'd with PRNG.
                 EnigmaMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
-                NoReflectorMode.Reverse, // choose a direction, does not matter which way.
+                NoReflectorMode.Encipher, 
                 CBCMode.Reverse);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
 
             // ************** BEGIN EXTRA measures for obscuration************** 
@@ -276,7 +276,7 @@ namespace Test_DLL_TomsRotaryCipher
                         byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sigaba, // Sigaba notching 
                 bIn, // plaintext
                 EnigmaMode.NoReflector, 
-                NoReflectorMode.Forward, 
+                NoReflectorMode.Encipher, 
                 CBCMode.None);
             Console.Write("stop time  ENCODE:" + DateTime.Now + Environment.NewLine);
 
@@ -335,7 +335,7 @@ namespace Test_DLL_TomsRotaryCipher
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext
                 EnigmaMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
-                NoReflectorMode.Reverse, // choose a direction, does not matter which way.
+                NoReflectorMode.Encipher, // Always encrypt going Forwards
                 CBCMode.Reverse);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
 
             // save all settings for Alice
@@ -406,7 +406,7 @@ namespace Test_DLL_TomsRotaryCipher
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext
                 EnigmaMode.NoReflector, 
-                NoReflectorMode.None, 
+                NoReflectorMode.Encipher, 
                 CBCMode.None);
             Console.Write("end time ENCODE StressTestMaxRotors:" + DateTime.Now + Environment.NewLine);
 
@@ -446,6 +446,7 @@ namespace Test_DLL_TomsRotaryCipher
         public static void FatalErrorUsingUnsafeMsgSpace(byte[] bIn)
         {
             /* 
+             * 12/12/2024 TJW this test now passes, but is left for proof.
              * Please pay attention!
              * 
              * this test produces a faulty messagespace due to selected options 
@@ -463,7 +464,7 @@ namespace Test_DLL_TomsRotaryCipher
                 bIn, // plaintext
                 // the following options will result in vastly reduced message space!
                 EnigmaMode.NoReflector, 
-                NoReflectorMode.Reverse, 
+                NoReflectorMode.Encipher, 
                 CBCMode.None);
 
             Console.Write(ChkForRepeats(bCipherTxt, 100, "FatalErrorUsingUnsafeMsgSpace"));
