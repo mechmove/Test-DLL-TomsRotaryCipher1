@@ -34,6 +34,9 @@ namespace Test_DLL_TomsRotaryCipher
              * are virtually unbreakable. I do believe with proper usage, StoneAgeEncryptionService can be used with other 
              * available tools, but do your own testing to prove it out for yourself. 
              * 
+             * For security profile of StoneAgeEncryptionService, please refer to document "True security of TomsRotaryCipher during 
+             * a bruteforce attack.doc" which is a part of this project.
+             * 
              * You should use more than one cipher method!
              * 
              * Below are various tests, put a breakpoint on each of them and proceed to look at code.
