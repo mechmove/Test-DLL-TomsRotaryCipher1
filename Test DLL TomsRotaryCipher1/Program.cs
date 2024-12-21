@@ -85,7 +85,7 @@ namespace Test_DLL_TomsRotaryCipher
             TomsRotaryCipher oTRC = new TomsRotaryCipher();
             oTRC.PopulateSeeds(); // populate regular seeds
             // ****************************************************************************************
-            oTRC.SetMovingCipherRotors(634); // define rotors here 
+            oTRC.SetMovingCipherRotors(654); // define rotors here 
             //oTRC.SetMovingCipherRotors(250_000); // test run with large rotor set
             // ****************************************************************************************
             // ************** BEGIN EXTRA measures for obscuration************** 
