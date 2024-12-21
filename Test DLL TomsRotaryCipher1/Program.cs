@@ -11,6 +11,22 @@ using System.Security.Cryptography;
 using System.Threading;
 using static StoneAgeEncryptionService.TomsRotaryCipher;
 
+//Trademark Notices/Disclaimer:
+
+//TomsRotaryCipher is a c# encryption/decryption DLL that belongs to namespace StoneAgeEncryptionService.
+//The source code is offered in GitHub under the MIT license. There are no guarantees the compiled DLL will
+//perform per specification or to anyone's expectations. 
+
+//Sigaba (Trademarked) was the original rotor skipping hardware of the 1950s comprising of index and control
+//rotors that facilitated a pseudo random skipping pattern of the primary cipher rotors. This idea serves as
+//inspiration for HopScotch, which is done in software, and may not be an accurate representation of the
+//original hardware implementation. There is no association, professional or otherwise, between Sigaba and HopScotch.
+
+//The German Enigma (Trademarked), was a commercially made encryption machine invented by German engineer
+//Arthur Scherbius in the late-1910s. This machine serves as inspiration for TomsRotaryCipher, which is done in software,
+//and may not be an accurate representation of the original hardware implementation. There is no association,
+//professional or otherwise, between Enigma and TomsRotaryCipher.
+
 namespace Test_DLL_TomsRotaryCipher
 {
     class Program
@@ -51,11 +67,23 @@ namespace Test_DLL_TomsRotaryCipher
             string PlainTxt = "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle - field of that war.We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live.It is altogether fitting and proper that we should do this.But, in a larger sense, we can not dedicate --we can not consecrate-- we can not hallow --this ground.The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract.The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced.It is rather for us to be here dedicated to the great task remaining before us-- that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion-- that we here highly resolve that these dead shall not have died in vain-- that this nation, under God, shall have a new birth of freedom-- and that government of the people, by the people, for the people, shall not perish from the earth.Abraham Lincoln November 19, 1863";
             bIn = Encoding.ASCII.GetBytes(PlainTxt);
 
-            // test out new High Security Mode 
+            //// repeated tests for new High Security Mode code using 250_000 rotors
+            //int Runs = 1000;
+            //int Failures = 0;
+            //for (int i = 1; i<= Runs; i++)
+            //{
+            //    if (TestHSMode(bIn).Equals(false))
+            //    {
+            //        Failures++;
+            //    }
+            //}
+            //Console.Write("There were " + Runs.ToString() + " iterations, failures = " + Failures.ToString() + Environment.NewLine);
+            //Console.ReadKey();
+
             TestHSMode(bIn);
 
             StressTestMaxRotors(bIn);
-            TestUsingSigabaSecureXOR(bIn);
+            TestUsingHopScotchSecureXOR(bIn);
             TestUsing1000Rotors(bIn);
 
             // repeated single char, 16.8MB
@@ -74,19 +102,19 @@ namespace Test_DLL_TomsRotaryCipher
 
             sRepeat = new String('s', Large);
             bIn = Encoding.ASCII.GetBytes(sRepeat);
-            CalculateMessageSpaceWithSigabaSecure(bIn);
+            CalculateMessageSpaceWithHopScotch(bIn);
 
             Console.Write("All tests are completed, check your results and press any key to close this box" + Environment.NewLine);
             Console.ReadKey();
         }
 
-        public static void TestHSMode(byte[] bIn)
+        public static bool TestHSMode(byte[] bIn)
         {
             TomsRotaryCipher oTRC = new TomsRotaryCipher();
             oTRC.PopulateSeeds(); // populate regular seeds
             // ****************************************************************************************
-            oTRC.SetMovingCipherRotors(654); // define rotors here 
-            //oTRC.SetMovingCipherRotors(250_000); // test run with large rotor set
+            //oTRC.SetMovingCipherRotors(654); // define rotors here 
+            oTRC.SetMovingCipherRotors(250_000); // test run with large rotor set
             // ****************************************************************************************
             // ************** BEGIN EXTRA measures for obscuration************** 
             // Please come up with your own, don't use methods that could be known to everyone!
@@ -103,7 +131,7 @@ namespace Test_DLL_TomsRotaryCipher
 
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential, 
                 inputXORdSecure, // plaintext, already XOR'd with PRNG.
-                EnigmaMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
+                RotaryCipherMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
                 NoReflectorMode.Encipher,
                 CBCMode.Forward);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
 
@@ -143,7 +171,7 @@ namespace Test_DLL_TomsRotaryCipher
             // TomsRotaryCipher.oSettings now contains all settings used to decipher back to plaintext.
             // GetCorrectDecodeOpt() will take inverse function required for deciphering back to plaintext
             byte[] bDecodedPlainTxt = oTRC_Alice.SAES(oTRC_Alice.oSettings.NotchPlan, bCipherTxt,
-                oTRC_Alice.oSettings.EnigmaMode,
+                oTRC_Alice.oSettings.RotaryCipherMode,
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.NoReflectorMode),
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.CBCMode));
 
@@ -154,10 +182,12 @@ namespace Test_DLL_TomsRotaryCipher
             if (bCipherTxtNew.SequenceEqual(bIn))
             {
                 Console.Write("TestHSMode : SUCCESS!" + Environment.NewLine);
+                return true;
             }
             else
             {
                 Console.Write("TestHSMode : FAILURE!" + Environment.NewLine);
+                return false;
             }
         }
         public static void HidingInPlainSight(byte[] bIn)
@@ -177,7 +207,7 @@ namespace Test_DLL_TomsRotaryCipher
             oTRC.SetMovingCipherRotors(3);
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential, 
                 bIn, // plaintext, repeated 's'
-                EnigmaMode.WithReflector, 
+                RotaryCipherMode.WithReflector, 
                 NoReflectorMode.None, // direction not selectable as data must travel in both directions, speed is also compromised.
                 CBCMode.None);// leave off CBC mode for this test
 
@@ -200,7 +230,7 @@ namespace Test_DLL_TomsRotaryCipher
 
             bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext, repeated 's'
-                EnigmaMode.NoReflector,
+                RotaryCipherMode.NoReflector,
                 NoReflectorMode.Encipher,
                 CBCMode.None); // leave off CBC mode for this test
 
@@ -227,16 +257,16 @@ namespace Test_DLL_TomsRotaryCipher
             oTRC.SetMovingCipherRotors(2);
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext, repeated 's'
-                EnigmaMode.NoReflector,
+                RotaryCipherMode.NoReflector,
                 NoReflectorMode.Encipher, 
                 CBCMode.None);// leave off CBC mode for this test
 
             Console.Write(ChkForRepeats(bCipherTxt, 100, "MessageSpacesymmetryTest"));
         }
 
-        public static void TestUsingSigabaSecureXOR(byte[] bIn)
+        public static void TestUsingHopScotchSecureXOR(byte[] bIn)
         {
-            /* Read all about my adventures with Sigaba:
+            /* Read all about my adventures with Sigaba-style skipping:
              * https://homeitstuff.blogspot.com/2019/10/sigaba-natural-successor-to-engima.html
              * 
              * this test uses a small number of rotors (5), but uses Sigaba style rotor skipping and an independant XOR cipher
@@ -255,7 +285,7 @@ namespace Test_DLL_TomsRotaryCipher
             TomsRotaryCipher oTRC = new TomsRotaryCipher();
             oTRC.PopulateSeeds(); // generates required 32 bit words for seeding lookup tables using RNGCryptoServiceProvider
             // rotors are generated with MS' version of a PRNG: System.Random.
-            oTRC.SetMovingCipherRotors(5);// Sigaba with CBCMode and SecureXOR permits a smaller rotor definition.
+            oTRC.SetMovingCipherRotors(5);// HopeScotch with CBCMode and SecureXOR permits a smaller rotor definition.
 
             // ************** BEGIN EXTRA measures for obscuration************** 
             // Please come up with your own, don't use methods that could be known to everyone!
@@ -270,10 +300,10 @@ namespace Test_DLL_TomsRotaryCipher
             oTRC.oSeeds.SeedTurnOverPositions= oTRC.SecureXOR(oTRC.oSeeds.SeedTurnOverPositions, oTRC.oSeeds);
             // ************** END EXTRA measures for obscuration************** 
 
-            byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sigaba, // Sigaba notching is the most complex, and also resource intensive.
+            byte[] bCipherTxt = oTRC.SAES(NotchPlan.HopScotch, // Sigaba - style notching is the most complex, and also resource intensive.
                                                             // Hint, you may use Sequential with a larger rotor definition.
                 inputXORdSecure, // plaintext, already XOR'd with PRNG.
-                EnigmaMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
+                RotaryCipherMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
                 NoReflectorMode.Encipher, 
                 CBCMode.Reverse);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
 
@@ -318,7 +348,7 @@ namespace Test_DLL_TomsRotaryCipher
             // TomsRotaryCipher.oSettings now contains all settings used to decipher back to plaintext.
             // GetCorrectDecodeOpt() will take inverse function required for deciphering back to plaintext
             byte[] bDecodedPlainTxt = oTRC_Alice.SAES(oTRC_Alice.oSettings.NotchPlan, bCipherTxt,
-                oTRC_Alice.oSettings.EnigmaMode,
+                oTRC_Alice.oSettings.RotaryCipherMode,
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.NoReflectorMode),
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.CBCMode));
 
@@ -328,19 +358,19 @@ namespace Test_DLL_TomsRotaryCipher
             // ************** END EXTRA measures ************** 
             if (bCipherTxtNew.SequenceEqual(bIn))
             {
-                //Console.Write("TestUsingSigabaSecureXOR:" + Encoding.ASCII.GetString(bCipherTxtNew) + Environment.NewLine);
-                Console.Write("TestUsingSigabaSecureXOR : SUCCESS!" + Environment.NewLine);
+                //Console.Write("TestUsingHopScotchSecureXOR:" + Encoding.ASCII.GetString(bCipherTxtNew) + Environment.NewLine);
+                Console.Write("TestUsingHopScotchSecureXOR : SUCCESS!" + Environment.NewLine);
             
             } else
             {
-                Console.Write("TestUsingSigabaSecureXOR : FAILURE!" + Environment.NewLine);
+                Console.Write("TestUsingHopScotchSecureXOR : FAILURE!" + Environment.NewLine);
             }
 }
 
-        public static void CalculateMessageSpaceWithSigabaSecure(byte[] bIn)
+        public static bool CalculateMessageSpaceWithHopScotch(byte[] bIn)
         {
             /* 
-             * Test how much security does Sigaba skipping provides. Safe message space with 2 rotors and regular odometer 
+             * Test how much security does Sigaba -style skipping provides. Safe message space with 2 rotors and regular odometer 
              * skipping = 256 ^ 2 = 65_536 characters. The question what is the actual safe message space if we use 2 rotors 
              * and Sigaba skipping logic?              * 
              * 
@@ -350,7 +380,7 @@ namespace Test_DLL_TomsRotaryCipher
             TomsRotaryCipher oTRC = new TomsRotaryCipher();
             oTRC.PopulateSeeds(); // generates required 32 bit words for seeding lookup tables using RNGCryptoServiceProvider
             // rotors are generated with MS' version of a PRNG: System.Random.
-            oTRC.SetMovingCipherRotors(2);// Sigaba with smaller rotor definition.
+            oTRC.SetMovingCipherRotors(2);// HopScotch with smaller rotor definition.
 
             // ************** BEGIN EXTRA measures for obscuration************** 
             // Please come up with your own, don't use methods that could be known to everyone!
@@ -366,25 +396,25 @@ namespace Test_DLL_TomsRotaryCipher
             // ************** END EXTRA measures for obscuration************** 
             
             Console.Write("start time ENCODE:" + DateTime.Now + Environment.NewLine);
-                        byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sigaba, // Sigaba notching 
+                        byte[] bCipherTxt = oTRC.SAES(NotchPlan.HopScotch, // Sigaba -style notching 
                 bIn, // plaintext
-                EnigmaMode.NoReflector, 
+                RotaryCipherMode.NoReflector, 
                 NoReflectorMode.Encipher, 
                 CBCMode.None);
             Console.Write("stop time  ENCODE:" + DateTime.Now + Environment.NewLine);
 
             // check bCipherTxt for identical patterns starting from pos 0 length 100, compare to 100++ to position X.
-            if (ChkForRepeats(bCipherTxt, 100, "CalculateMessageSpaceWithSigabaSecure").Contains("no repeats"))
+            if (ChkForRepeats(bCipherTxt, 100, "CalculateMessageSpaceWithHopScotch").Contains("no repeats"))
             {
                 double MaxTestedSafeSpace = bCipherTxt.Length / Math.Pow(256, oTRC.oSettings.MovingCipherRotors);
                 double Space = MaxTestedSafeSpace * Math.Pow(256, oTRC.oSettings.MovingCipherRotors);
 
-                Console.Write("CalculateMessageSpaceWithSigabaSecure (with 2 rotors) : [test was a SUCCESS]!" + Environment.NewLine);
-                Console.Write("CalculateMessageSpaceWithSigabaSecure (with 2 rotors) X factor : ["+ MaxTestedSafeSpace.ToString() + " X " + Math.Pow(256, oTRC.oSettings.MovingCipherRotors).ToString() + " = " + Space.ToString("N0") +  " characters]!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch (with 2 rotors) : [test was a SUCCESS]!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch(with 2 rotors) X factor : [" + MaxTestedSafeSpace.ToString() + " X " + Math.Pow(256, oTRC.oSettings.MovingCipherRotors).ToString() + " = " + Space.ToString("N0") +  " characters]!" + Environment.NewLine);
             }
             else
             {
-                Console.Write("CalculateMessageSpaceWithSigabaSecure (with 2 rotors) : [test was a FAILURE]!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch (with 2 rotors) : [test was a FAILURE]!" + Environment.NewLine);
             }
             byte[] bAllSettings = oTRC.GetAll();
             File.WriteAllBytes("SettingsForAlice.bin", bAllSettings); // Seeds and Settings are stored away
@@ -399,7 +429,7 @@ namespace Test_DLL_TomsRotaryCipher
             // GetCorrectDecodeOpt() will take inverse function required for deciphering back to plaintext
             Console.Write("start time DECODE:" + DateTime.Now + Environment.NewLine);
             byte[] bDecodedPlainTxt = oTRC_Alice.SAES(oTRC_Alice.oSettings.NotchPlan, bCipherTxt,
-                oTRC_Alice.oSettings.EnigmaMode,
+                oTRC_Alice.oSettings.RotaryCipherMode,
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.NoReflectorMode),
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.CBCMode));
             Console.Write("stop time  DECODE:" + DateTime.Now + Environment.NewLine);
@@ -407,11 +437,13 @@ namespace Test_DLL_TomsRotaryCipher
             if (bDecodedPlainTxt.SequenceEqual(bIn))
             {
                 //Console.Write("TestUsingMaxKeyspace:" + Encoding.ASCII.GetString(bDecodedPlainTxt) + Environment.NewLine);
-                Console.Write("CalculateMessageSpaceWithSigabaSecure (with 2 rotors) : DECODE SUCCESS!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch (with 2 rotors) : DECODE SUCCESS!" + Environment.NewLine);
+                return true;
             }
             else
             {
-                Console.Write("CalculateMessageSpaceWithSigabaSecure (with 2 rotors) : DECODE FAILURE!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch (with 2 rotors) : DECODE FAILURE!" + Environment.NewLine);
+                return false;
             }
         }
 
@@ -427,7 +459,7 @@ namespace Test_DLL_TomsRotaryCipher
             oTRC.SetMovingCipherRotors(1000); 
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext
-                EnigmaMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
+                RotaryCipherMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
                 NoReflectorMode.Encipher, // Always encrypt going Forwards
                 CBCMode.Reverse);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
 
@@ -447,7 +479,7 @@ namespace Test_DLL_TomsRotaryCipher
             // TomsRotaryCipher.oSettings now contains all settings used to decipher back to plaintext.
             // GetCorrectDecodeOpt() will take inverse function required for deciphering back to plaintext
             byte[] bDecodedPlainTxt = oTRC_Alice.SAES(oTRC_Alice.oSettings.NotchPlan, bCipherTxt,
-                oTRC_Alice.oSettings.EnigmaMode,
+                oTRC_Alice.oSettings.RotaryCipherMode,
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.NoReflectorMode),
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.CBCMode));
 
@@ -498,7 +530,7 @@ namespace Test_DLL_TomsRotaryCipher
             Console.Write("start time ENCODE StressTestMaxRotors:" + DateTime.Now + Environment.NewLine);
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext
-                EnigmaMode.NoReflector, 
+                RotaryCipherMode.NoReflector, 
                 NoReflectorMode.Encipher, 
                 CBCMode.None);
             Console.Write("end time ENCODE StressTestMaxRotors:" + DateTime.Now + Environment.NewLine);
@@ -520,7 +552,7 @@ namespace Test_DLL_TomsRotaryCipher
             // GetCorrectDecodeOpt() will take inverse function required for deciphering back to plaintext
             Console.Write("start time DECODE StressTestMaxRotors:" + DateTime.Now + Environment.NewLine);
             byte[] bDecodedPlainTxt = oTRC_Alice.SAES(oTRC_Alice.oSettings.NotchPlan, bCipherTxt,
-                oTRC_Alice.oSettings.EnigmaMode,
+                oTRC_Alice.oSettings.RotaryCipherMode,
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.NoReflectorMode),
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.CBCMode));
 
@@ -555,8 +587,8 @@ namespace Test_DLL_TomsRotaryCipher
             oTRC.SetMovingCipherRotors(2);
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext
-                // the following options will result in vastly reduced message space!
-                EnigmaMode.NoReflector, 
+                     // the following options will result in vastly reduced message space!
+                RotaryCipherMode.NoReflector, 
                 NoReflectorMode.Encipher, 
                 CBCMode.None);
 
@@ -564,17 +596,16 @@ namespace Test_DLL_TomsRotaryCipher
         }
 
 
-        public static string ChkForRepeats(byte[] bCipherTxt, int RepeatingOffset,string functionName )
+        public static string ChkForRepeats(byte[] bCipherTxt, int RepeatingOffset,string functionName)
         {
             bool AnyMatch;
             Int64 Limit = bCipherTxt.Length - RepeatingOffset - 1;
             Int64 CalculatedRepeat = 0;
-            for (Int64 l = 0; l <= Limit; l++)
+            for (Int64 l = 0; l < Limit; l++)
             {
                 AnyMatch = DoesItMatch(bCipherTxt, 0, l + RepeatingOffset, RepeatingOffset);
                 if (AnyMatch.Equals(true))
                 {
-                    AnyMatch = true;
                     CalculatedRepeat = l + RepeatingOffset;
                     long CipherTxtLen = bCipherTxt.Length;
                     decimal SafeMsgSpaceRatio = (Convert.ToDecimal(CalculatedRepeat) / Convert.ToDecimal(CipherTxtLen))*100;
