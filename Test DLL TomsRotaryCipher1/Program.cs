@@ -67,6 +67,8 @@ namespace Test_DLL_TomsRotaryCipher
             string PlainTxt = "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle - field of that war.We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live.It is altogether fitting and proper that we should do this.But, in a larger sense, we can not dedicate --we can not consecrate-- we can not hallow --this ground.The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract.The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced.It is rather for us to be here dedicated to the great task remaining before us-- that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion-- that we here highly resolve that these dead shall not have died in vain-- that this nation, under God, shall have a new birth of freedom-- and that government of the people, by the people, for the people, shall not perish from the earth.Abraham Lincoln November 19, 1863";
             bIn = Encoding.ASCII.GetBytes(PlainTxt);
 
+            GenericNonStressTest(bIn);
+
             // repeated tests for new High Security Mode code using 250_000 rotors
             int Runs = 10;
             int Failures = 0;
@@ -90,7 +92,7 @@ namespace Test_DLL_TomsRotaryCipher
             string sRepeat = new String('s', 16_777_216);
             //string sRepeat = new String('s', 33_554_432);
             bIn = Encoding.ASCII.GetBytes(sRepeat);
-
+            HidingInPlainSight2_debug(bIn); // this is to test Debug Mode, extract all rotors into CSV
             for (int i = 1; i <= Runs; i++)
             {
                 HidingInPlainSight2(bIn);
@@ -257,6 +259,31 @@ namespace Test_DLL_TomsRotaryCipher
             }
 
         }
+        public static void HidingInPlainSight2_debug(byte[] bIn)
+        {
+            TomsRotaryCipher oTRC = new TomsRotaryCipher();
+            oTRC.PopulateSeeds();
+            oTRC.SetMovingCipherRotors(3);
+            byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
+                bIn, // plaintext, repeated 's'
+                RotaryCipherMode.WithReflector,
+                NoReflectorMode.None, // direction not selectable as data must travel in both directions, speed is also compromised.
+                CBCMode.None,
+                DebugMode.Yes);
+
+            string CipherTxt = Encoding.Default.GetString(bCipherTxt);
+            //File.WriteAllText("test", CipherTxt);
+
+            if (CipherTxt.IndexOf('s') < 0)
+            {
+                Console.Write("HidingInPlainSight2 (with 3 rotors) : s not found [test was a SUCCESS]!" + Environment.NewLine);
+            }
+            else
+            {
+                Console.Write("HidingInPlainSight2 (with 3 rotors) : [test was a FAILURE]!" + Environment.NewLine);
+            }
+
+        }
 
         public static void HidingInPlainSight2(byte[] bIn)
         {
@@ -267,7 +294,7 @@ namespace Test_DLL_TomsRotaryCipher
                 bIn, // plaintext, repeated 's'
                 RotaryCipherMode.WithReflector,
                 NoReflectorMode.None, // direction not selectable as data must travel in both directions, speed is also compromised.
-                CBCMode.None) ;// leave off CBC mode for this test
+                CBCMode.None);// CBC mode needs to stay leave off for this test, otherwise an exception will be thrown
 
             string CipherTxt = Encoding.Default.GetString(bCipherTxt);
             //File.WriteAllText("test", CipherTxt);
@@ -601,6 +628,56 @@ namespace Test_DLL_TomsRotaryCipher
             } else
             {
                 Console.Write("StressTestMaxRotors: FAILURE!" + Environment.NewLine);
+            }
+
+        }
+
+        public static void GenericNonStressTest(byte[] bIn)
+        {
+            TomsRotaryCipher oTRC = new TomsRotaryCipher();
+            oTRC.PopulateSeeds(); // generates required 32 bit words for seeds using RNGCryptoServiceProvider
+            // rotors are generated with MS' version of a PRNG: System.Random.
+            oTRC.SetMovingCipherRotors(3);
+            Console.Write("oTRC.oSettings.MovingCipherRotors =" + oTRC.oSettings.MovingCipherRotors + Environment.NewLine);
+            Console.Write("start time ENCODE GenericNonStressTest:" + DateTime.Now + Environment.NewLine);
+            byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
+                bIn, // plaintext
+                RotaryCipherMode.NoReflector,
+                NoReflectorMode.Encipher,
+                CBCMode.None,
+                DebugMode.Yes);
+            Console.Write("end time ENCODE GenericNonStressTest:" + DateTime.Now + Environment.NewLine);
+
+            // save all settings for Alice
+            byte[] bAllSettings = oTRC.GetAll();
+            File.WriteAllBytes("SettingsForAlice.bin", bAllSettings); // Seeds and Settings are stored away
+                                                                      //send to Alice bCipherTxt and bAllSettings (using Alice's public key)
+
+            // PUBLIC INTERNET SPACE.... THE WILD WILD WEST, PROTECT YOURSELF!
+
+
+            // Alice receives and creates her own instance of TomsRotaryCiphr
+            TomsRotaryCipher oTRC_Alice = new TomsRotaryCipher();
+            // Alice loads all seeds and settings sent from Bob used to encipher the message
+            oTRC_Alice.LoadAll(File.ReadAllBytes("SettingsForAlice.bin"));
+
+            // TomsRotaryCipher.oSettings now contains all settings used to decipher back to plaintext.
+            // GetCorrectDecodeOpt() will take inverse function required for deciphering back to plaintext
+            Console.Write("start time DECODE GenericNonStressTest:" + DateTime.Now + Environment.NewLine);
+            byte[] bDecodedPlainTxt = oTRC_Alice.SAES(oTRC_Alice.oSettings.NotchPlan, bCipherTxt,
+                oTRC_Alice.oSettings.RotaryCipherMode,
+                oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.NoReflectorMode),
+                oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.CBCMode));
+
+            Console.Write("end time DECODE GenericNonStressTest:" + DateTime.Now + Environment.NewLine);
+            if (bDecodedPlainTxt.SequenceEqual(bIn))
+            {
+                //Console.Write("TestUsingMaxKeyspace:" + Encoding.ASCII.GetString(bDecodedPlainTxt) + Environment.NewLine);
+                Console.Write("GenericNonStressTest: SUCCESS!" + Environment.NewLine);
+            }
+            else
+            {
+                Console.Write("GenericNonStressTest: FAILURE!" + Environment.NewLine);
             }
 
         }
