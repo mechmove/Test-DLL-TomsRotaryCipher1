@@ -93,15 +93,16 @@ namespace Test_DLL_TomsRotaryCipher
             string sRepeat = new String('s', 16_777_216);
             //string sRepeat = new String('s', 33_554_432);
             bIn = Encoding.ASCII.GetBytes(sRepeat);
-            HidingInPlainSight2_debug(bIn); // this is to test Debug Mode, extract all rotors into CSV
-            for (int i = 1; i <= Runs; i++)
-            {
-                Console.Write("Trial:" + i + " ");
-                HidingInPlainSight2(bIn);
 
-            }
+            //HidingInPlainSight2_debug(bIn); // this is to test Debug Mode, extract all rotors into CSV
+            //for (int i = 1; i <= Runs; i++)
+            //{
+            //    Console.Write("Trial:" + i + " ");
+            //    HidingInPlainSight2(bIn);
 
-            Console.ReadKey();
+            //}
+
+            //Console.ReadKey();
 
             sRepeat = new String('s', 131_072);
             bIn = Encoding.ASCII.GetBytes(sRepeat);
