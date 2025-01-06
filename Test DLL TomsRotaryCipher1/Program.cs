@@ -89,13 +89,16 @@ namespace Test_DLL_TomsRotaryCipher
             TestUsing1000Rotors(bIn);
 
             // repeated single char, 16.8MB
+            Runs = 1000;
             string sRepeat = new String('s', 16_777_216);
             //string sRepeat = new String('s', 33_554_432);
             bIn = Encoding.ASCII.GetBytes(sRepeat);
             HidingInPlainSight2_debug(bIn); // this is to test Debug Mode, extract all rotors into CSV
             for (int i = 1; i <= Runs; i++)
             {
+                Console.Write("Trial:" + i + " ");
                 HidingInPlainSight2(bIn);
+
             }
 
             Console.ReadKey();
@@ -269,7 +272,7 @@ namespace Test_DLL_TomsRotaryCipher
                 RotaryCipherMode.WithReflector,
                 NoReflectorMode.None, // direction not selectable as data must travel in both directions, speed is also compromised.
                 CBCMode.None,
-                DebugMode.Yes);
+                DebugMode.No);
 
             string CipherTxt = Encoding.Default.GetString(bCipherTxt);
             //File.WriteAllText("test", CipherTxt);
