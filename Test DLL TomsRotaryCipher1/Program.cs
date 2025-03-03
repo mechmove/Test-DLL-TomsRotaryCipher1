@@ -67,7 +67,20 @@ namespace Test_DLL_TomsRotaryCipher
             string PlainTxt = "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle - field of that war.We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live.It is altogether fitting and proper that we should do this.But, in a larger sense, we can not dedicate --we can not consecrate-- we can not hallow --this ground.The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract.The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced.It is rather for us to be here dedicated to the great task remaining before us-- that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion-- that we here highly resolve that these dead shall not have died in vain-- that this nation, under God, shall have a new birth of freedom-- and that government of the people, by the people, for the people, shall not perish from the earth.Abraham Lincoln November 19, 1863";
             bIn = Encoding.ASCII.GetBytes(PlainTxt);
 
-            GenericNonStressTest(bIn);
+            //GenericNonStressTest(bIn);
+            bIn = Encoding.ASCII.GetBytes("s");
+
+            for (int i = 1; i <= 1000; i++)
+            {
+                if (GenericNonStressTest(bIn).Equals(true))
+                {
+                    Console.Write("Run: " + i.ToString().PadLeft(3, '0') + " GenericNonStressTest: SUCCESS!" + Environment.NewLine);
+                }
+                else
+                {
+                    Console.Write("Run: " + i.ToString().PadLeft(3, '0') + " GenericNonStressTest: FAILURE!" + Environment.NewLine);
+                }
+            }
 
             // repeated tests for new High Security Mode code using 250_000 rotors
             int Runs = 10;
@@ -641,21 +654,18 @@ namespace Test_DLL_TomsRotaryCipher
 
         }
 
-        public static void GenericNonStressTest(byte[] bIn)
+        public static bool GenericNonStressTest(byte[] bIn)
         {
             TomsRotaryCipher oTRC = new TomsRotaryCipher();
             oTRC.PopulateSeeds(); // generates required 32 bit words for seeds using RNGCryptoServiceProvider
             // rotors are generated with MS' version of a PRNG: System.Random.
             oTRC.SetMovingCipherRotors(3);
-            Console.Write("oTRC.oSettings.MovingCipherRotors =" + oTRC.oSettings.MovingCipherRotors + Environment.NewLine);
-            Console.Write("start time ENCODE GenericNonStressTest:" + DateTime.Now + Environment.NewLine);
             byte[] bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
                 bIn, // plaintext
-                RotaryCipherMode.NoReflector,
+                RotaryCipherMode.WithReflector,
                 NoReflectorMode.Encipher,
                 CBCMode.None,
                 DebugMode.Yes);
-            Console.Write("end time ENCODE GenericNonStressTest:" + DateTime.Now + Environment.NewLine);
 
             // save all settings for Alice
             byte[] bAllSettings = oTRC.GetAll();
@@ -672,21 +682,18 @@ namespace Test_DLL_TomsRotaryCipher
 
             // TomsRotaryCipher.oSettings now contains all settings used to decipher back to plaintext.
             // GetCorrectDecodeOpt() will take inverse function required for deciphering back to plaintext
-            Console.Write("start time DECODE GenericNonStressTest:" + DateTime.Now + Environment.NewLine);
             byte[] bDecodedPlainTxt = oTRC_Alice.SAES(oTRC_Alice.oSettings.NotchPlan, bCipherTxt,
                 oTRC_Alice.oSettings.RotaryCipherMode,
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.NoReflectorMode),
                 oTRC_Alice.GetCorrectDecodeOpt(oTRC_Alice.oSettings.CBCMode));
 
-            Console.Write("end time DECODE GenericNonStressTest:" + DateTime.Now + Environment.NewLine);
             if (bDecodedPlainTxt.SequenceEqual(bIn))
             {
-                //Console.Write("TestUsingMaxKeyspace:" + Encoding.ASCII.GetString(bDecodedPlainTxt) + Environment.NewLine);
-                Console.Write("GenericNonStressTest: SUCCESS!" + Environment.NewLine);
+                return true;
             }
             else
             {
-                Console.Write("GenericNonStressTest: FAILURE!" + Environment.NewLine);
+                return false;
             }
 
         }
