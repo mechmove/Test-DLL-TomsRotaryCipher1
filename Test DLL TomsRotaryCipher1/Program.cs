@@ -67,10 +67,48 @@ namespace Test_DLL_TomsRotaryCipher
             string PlainTxt = "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle - field of that war.We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live.It is altogether fitting and proper that we should do this.But, in a larger sense, we can not dedicate --we can not consecrate-- we can not hallow --this ground.The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract.The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced.It is rather for us to be here dedicated to the great task remaining before us-- that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion-- that we here highly resolve that these dead shall not have died in vain-- that this nation, under God, shall have a new birth of freedom-- and that government of the people, by the people, for the people, shall not perish from the earth.Abraham Lincoln November 19, 1863";
             bIn = Encoding.ASCII.GetBytes(PlainTxt);
 
+            //int LargeNum = 100_000;
+            //LargeNum = 1000;
+            //string NewStr= new String('s', LargeNum);
+            //bIn = Encoding.ASCII.GetBytes(NewStr);
+
+            // for hopscotch , we need a predetermined XOR and notchplan seeds
+            byte[] bSeedNotchPlan = new byte[4];
+            byte[] bSeedXOR = new byte[4];
+
+            bSeedNotchPlan[0] = 189;
+            bSeedNotchPlan[1] = 80;
+            bSeedNotchPlan[2] = 28;
+            bSeedNotchPlan[3] = 10;
+
+            bSeedXOR[0] = 98;
+            bSeedXOR[1] = 201;
+            bSeedXOR[2] = 11;
+            bSeedXOR[3] = 158;
+
+            CalculateMessageSpaceWithHopScotch(bIn, bSeedNotchPlan, bSeedXOR,3);
+            //Console.ReadKey();
+
+            //string sVeryLargeString = new String('s', 100_000_000);
+            //bIn = Encoding.ASCII.GetBytes(sVeryLargeString);
+
+            Console.Write("start time ENCODE:" + DateTime.Now + Environment.NewLine);
+            // use this code to test Sequential "real-time" NotchPlan 
+            TestHSModeEncode(bIn, 10);
+            if (TestHSModeDecode(bIn).Equals(true))
+            {
+                Console.Write("Success!" + Environment.NewLine);
+            } else
+            {
+                Console.Write("Failure!" + Environment.NewLine);
+            }
+            Console.Write("stop time  ENCODE:" + DateTime.Now + Environment.NewLine);
+            //Console.ReadKey();
+
             //GenericNonStressTest(bIn);
             bIn = Encoding.ASCII.GetBytes("s");
 
-            for (int i = 1; i <= 1000; i++)
+            for (int i = 1; i <= 10; i++)
             {
                 if (GenericNonStressTest(bIn).Equals(true))
                 {
@@ -447,7 +485,7 @@ namespace Test_DLL_TomsRotaryCipher
             }
 }
 
-        public static bool CalculateMessageSpaceWithHopScotch(byte[] bIn)
+        public static bool CalculateMessageSpaceWithHopScotch(byte[] bIn, byte[] bSeedNotchPlan = null, byte[] bSeedXOR = null, int Rotors = 2)
         {
             /* 
              * Test how much security does Sigaba -style skipping provides. Safe message space with 2 rotors and regular odometer 
@@ -459,8 +497,25 @@ namespace Test_DLL_TomsRotaryCipher
 
             TomsRotaryCipher oTRC = new TomsRotaryCipher();
             oTRC.PopulateSeeds(); // generates required 32 bit words for seeding lookup tables using RNGCryptoServiceProvider
-            // rotors are generated with MS' version of a PRNG: System.Random.
-            oTRC.SetMovingCipherRotors(2);// HopScotch with smaller rotor definition.
+                                  // rotors are generated with MS' version of a PRNG: System.Random.
+            if (bSeedNotchPlan != null)
+            {
+                oTRC.oSeeds.SeedXOR[0] = bSeedXOR[0];
+                oTRC.oSeeds.SeedXOR[1] = bSeedXOR[1];
+                oTRC.oSeeds.SeedXOR[2] = bSeedXOR[2];
+                oTRC.oSeeds.SeedXOR[3] = bSeedXOR[3];
+
+                oTRC.oSeeds.SeedXOR = oTRC.SecureXOR(oTRC.oSeeds.SeedXOR, oTRC.oSeeds);
+            }
+            if (Rotors.Equals(2))
+            {
+                oTRC.SetMovingCipherRotors(2);// HopScotch with smaller rotor definition.
+            }
+            else 
+            {
+                oTRC.SetMovingCipherRotors(Rotors);
+            }
+
 
             // ************** BEGIN EXTRA measures for obscuration************** 
             // Please come up with your own, don't use methods that could be known to everyone!
@@ -468,7 +523,20 @@ namespace Test_DLL_TomsRotaryCipher
             // scamble some seeds
             oTRC.oSeeds.SeedRotors = oTRC.SecureXOR(oTRC.oSeeds.SeedRotors, oTRC.oSeeds);
             oTRC.oSeeds.SeedIndividualRotors = oTRC.SecureXOR(oTRC.oSeeds.SeedIndividualRotors, oTRC.oSeeds); 
-            oTRC.oSeeds.SeedNotchPlan = oTRC.SecureXOR(oTRC.oSeeds.SeedNotchPlan, oTRC.oSeeds);
+
+            if (bSeedNotchPlan==null)
+            {
+                oTRC.oSeeds.SeedNotchPlan = oTRC.SecureXOR(oTRC.oSeeds.SeedNotchPlan, oTRC.oSeeds);
+            } else
+            {
+                oTRC.oSeeds.SeedNotchPlan[0] = bSeedNotchPlan[0];
+                oTRC.oSeeds.SeedNotchPlan[1] = bSeedNotchPlan[1];
+                oTRC.oSeeds.SeedNotchPlan[2] = bSeedNotchPlan[2];
+                oTRC.oSeeds.SeedNotchPlan[3] = bSeedNotchPlan[3];
+
+                oTRC.oSeeds.SeedNotchPlan = oTRC.SecureXOR(oTRC.oSeeds.SeedNotchPlan, oTRC.oSeeds);
+            }
+
             oTRC.oSeeds.SeedPlugBoard = oTRC.SecureXOR(oTRC.oSeeds.SeedPlugBoard, oTRC.oSeeds);
             oTRC.oSeeds.SeedReflector = oTRC.SecureXOR(oTRC.oSeeds.SeedReflector, oTRC.oSeeds);
             oTRC.oSeeds.SeedStartPositions = oTRC.SecureXOR(oTRC.oSeeds.SeedStartPositions, oTRC.oSeeds);
@@ -489,12 +557,12 @@ namespace Test_DLL_TomsRotaryCipher
                 double MaxTestedSafeSpace = bCipherTxt.Length / Math.Pow(256, oTRC.oSettings.MovingCipherRotors);
                 double Space = MaxTestedSafeSpace * Math.Pow(256, oTRC.oSettings.MovingCipherRotors);
 
-                Console.Write("CalculateMessageSpaceWithHopScotch (with 2 rotors) : [test was a SUCCESS]!" + Environment.NewLine);
-                Console.Write("CalculateMessageSpaceWithHopScotch(with 2 rotors) X factor : [" + MaxTestedSafeSpace.ToString() + " X " + Math.Pow(256, oTRC.oSettings.MovingCipherRotors).ToString() + " = " + Space.ToString("N0") +  " characters]!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch (with " + Rotors.ToString() + " rotors) : [test was a SUCCESS]!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch(with " + Rotors.ToString() + " rotors) X factor : [" + MaxTestedSafeSpace.ToString() + " X " + Math.Pow(256, oTRC.oSettings.MovingCipherRotors).ToString() + " = " + Space.ToString("N0") +  " characters]!" + Environment.NewLine);
             }
             else
             {
-                Console.Write("CalculateMessageSpaceWithHopScotch (with 2 rotors) : [test was a FAILURE]!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch (with " + Rotors.ToString() + " rotors) : [test was a FAILURE]!" + Environment.NewLine);
             }
             byte[] bAllSettings = oTRC.GetAll();
             File.WriteAllBytes("SettingsForAlice.bin", bAllSettings); // Seeds and Settings are stored away
@@ -517,12 +585,12 @@ namespace Test_DLL_TomsRotaryCipher
             if (bDecodedPlainTxt.SequenceEqual(bIn))
             {
                 //Console.Write("TestUsingMaxKeyspace:" + Encoding.ASCII.GetString(bDecodedPlainTxt) + Environment.NewLine);
-                Console.Write("CalculateMessageSpaceWithHopScotch (with 2 rotors) : DECODE SUCCESS!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch (with " + Rotors.ToString() + " rotors) : DECODE SUCCESS!" + Environment.NewLine);
                 return true;
             }
             else
             {
-                Console.Write("CalculateMessageSpaceWithHopScotch (with 2 rotors) : DECODE FAILURE!" + Environment.NewLine);
+                Console.Write("CalculateMessageSpaceWithHopScotch (with " + Rotors.ToString() + " rotors) : DECODE FAILURE!" + Environment.NewLine);
                 return false;
             }
         }
