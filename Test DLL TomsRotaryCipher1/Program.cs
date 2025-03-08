@@ -67,10 +67,15 @@ namespace Test_DLL_TomsRotaryCipher
             // after "optimization" logic.
 
             // First, run with "true", then switch DLLs then change below from true to false and run again.
-            bool Part_I_Of_Test = true;
+            bool Part_I_Of_Test = false;
+            bool Do_HopScotch_Test = true;
 
-            int Rotors = 50;
-            Int64 PlainTxt = 500_000;
+            int Rotors = 4;
+            Int32 PlainTxt = 50_000_000; 
+            //Int32 PlainTxt = 1_677_000_000; // largest number on my machine
+
+            DateTime StartTime;
+            DateTime EndTime;
 
             TomsRotaryCipher oTRC = new TomsRotaryCipher();
             if (Part_I_Of_Test)
@@ -84,29 +89,50 @@ namespace Test_DLL_TomsRotaryCipher
                 oRNG1.GetBytes(bIn);
                 oRNG1.Dispose();
                 File.WriteAllBytes("bInput.bin", bIn);
+                
+                Console.Write("For Rotors=" + Rotors.ToString("N0") + ", PlainTxt=" + PlainTxt.ToString("N0") + Environment.NewLine + Environment.NewLine);
 
                 // now run encryption and save the output
-                Console.Write("start time Sequential ENCODE:" + DateTime.Now + Environment.NewLine);
+                StartTime = DateTime.Now;
+                Console.Write("start time Sequential ENCODE:" + StartTime + Environment.NewLine);
                 TestHSModeEncode(bIn, Rotors, "AllSettings.bin", "CipherTextTestHSModeEncode.bin");
-                Console.Write("stop time Sequential ENCODE:" + DateTime.Now + Environment.NewLine);
+                EndTime = DateTime.Now;
+                Console.Write("stop time Sequential ENCODE:" + EndTime + Environment.NewLine);
+                Console.Write("Time Elapsed: " + (EndTime - StartTime).TotalSeconds.ToString("0.00") + " seconds" + Environment.NewLine + Environment.NewLine);
 
-                Console.Write("start time Hopscotch ENCODE:" + DateTime.Now + Environment.NewLine);
-                TestHopScotchEncode(bIn, "AllSettings.bin", "CipherTextTestHopScotchEncode.bin");
-                Console.Write("stop time Hopscotch ENCODE:" + DateTime.Now + Environment.NewLine);
+                if (Do_HopScotch_Test)
+                {
+                    StartTime = DateTime.Now;
+                    Console.Write("start time Hopscotch ENCODE:" + StartTime + Environment.NewLine);
+                    TestHopScotchEncode(bIn, "AllSettings.bin", "CipherTextTestHopScotchEncode.bin");
+                    EndTime = DateTime.Now;
+                    Console.Write("stop time Hopscotch ENCODE:" + EndTime + Environment.NewLine);
+                    Console.Write("Time Elapsed: " + (EndTime - StartTime).TotalSeconds.ToString("0.00") + " seconds" + Environment.NewLine + Environment.NewLine);
+                }
             }
             else
             {
                 oTRC.LoadAll(File.ReadAllBytes("AllSettings.bin"));
                 bIn = File.ReadAllBytes("bInput.bin");
 
-                // now run Decryption and compare the output
-                Console.Write("start time Sequential ENCODE:" + DateTime.Now + Environment.NewLine);
-                TestHSModeDecode(bIn, Rotors, "AllSettings.bin", "CipherTextTestHSModeEncode.bin").Equals(true);
-                Console.Write("stop time Sequential ENCODE:" + DateTime.Now + Environment.NewLine);
+                Console.Write("For Rotors=" + Rotors.ToString("N0") + ", PlainTxt=" + PlainTxt.ToString("N0") + Environment.NewLine + Environment.NewLine);
 
-                Console.Write("start time Hopscotch ENCODE:" + DateTime.Now + Environment.NewLine);
-                TestHopScotchDecode(bIn, "AllSettings.bin", "CipherTextTestHopScotchEncode.bin").Equals(true);
-                Console.Write("stop time Hopscotch ENCODE:" + DateTime.Now + Environment.NewLine);
+                // now run Decryption and compare the output
+                StartTime = DateTime.Now;
+                Console.Write("start time Sequential DECODE:" + StartTime + Environment.NewLine);
+                TestHSModeDecode(bIn, Rotors, "AllSettings.bin", "CipherTextTestHSModeEncode.bin").Equals(true);
+                EndTime = DateTime.Now;
+                Console.Write("stop time Sequential DECODE:" + EndTime + Environment.NewLine);
+                Console.Write("Time Elapsed: " + (EndTime - StartTime).TotalSeconds.ToString("0.00") + " seconds" + Environment.NewLine + Environment.NewLine);
+                if (Do_HopScotch_Test)
+                {
+                    StartTime = DateTime.Now;
+                    Console.Write("start time Hopscotch DECODE:" + StartTime + Environment.NewLine);
+                    TestHopScotchDecode(bIn, "AllSettings.bin", "CipherTextTestHopScotchEncode.bin").Equals(true);
+                    EndTime = DateTime.Now;
+                    Console.Write("stop time Hopscotch DECODE:" + EndTime + Environment.NewLine);
+                    Console.Write("Time Elapsed: " + (EndTime - StartTime).TotalSeconds.ToString("0.00") + " seconds" + Environment.NewLine + Environment.NewLine);
+                }
             }
 
             Console.Write("All tests are completed, check your results and press any key to close this box" + Environment.NewLine);
