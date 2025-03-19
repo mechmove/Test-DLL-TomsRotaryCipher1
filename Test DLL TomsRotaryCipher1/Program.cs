@@ -115,10 +115,13 @@ namespace Test_DLL_TomsRotaryCipher
                     for (int i = LargestWordSearch; i >= SmallestWordSearch; i--)
                     {
                         Console.Write(ChkForRepeats(bCipherTxt, i, "DoExtraTests"));
+                        Console.Write(ChkForRepeats(bCipherTxt, i, "DoExtraTests", bCipherTxt.Length / 2 ));
+                        Console.Write(ChkForRepeats(bCipherTxt, i, "DoExtraTests", bCipherTxt.Length / 3));
+                        Console.Write(ChkForRepeats(bCipherTxt, i, "DoExtraTests", bCipherTxt.Length / 4));
                     }
                 }
 
-                Console.Write("Extra Tests has concluded!" + Environment.NewLine + Environment.NewLine);
+                Console.Write(Environment.NewLine + "Extra Tests has concluded!" + Environment.NewLine + Environment.NewLine);
                 Console.ReadKey();
             }
 
@@ -309,10 +312,26 @@ namespace Test_DLL_TomsRotaryCipher
             }
         }
 
-        public static string ChkForRepeats(byte[] bCipherTxt, int RepeatingOffset, string functionName)
+        public static string ChkForRepeats(byte[] bCipherTxtSource, int RepeatingOffset, string functionName, Int64 StartSearch= 0)
         {
+            byte[] bCipherTxt = new byte[bCipherTxtSource.Length];
+
+            if (StartSearch.Equals(0))
+            {
+                Array.Copy(bCipherTxtSource, bCipherTxt, bCipherTxtSource.Length);
+            } 
+            else
+            {
+                Array.Copy(bCipherTxtSource,0, bCipherTxt, StartSearch, StartSearch);
+                Array.Copy(bCipherTxtSource, StartSearch, bCipherTxt, 0, StartSearch);
+            }
+
+            //File.WriteAllBytes("CipherTxtDeckCut.bin", bCipherTxt); // this is for debugging using Hex Editor Neo
+
+            bCipherTxtSource = null;
+
             string RepeatStrRtn = string.Empty;
-            string NoRepeatStr = functionName + ", " + RepeatingOffset.ToString() + " char block sizes, there were NO Repeats." + Environment.NewLine;
+            string NoRepeatStr = functionName + ", " + RepeatingOffset.ToString() + " char block sizes, deck cut at " + StartSearch.ToString("N0") +  " there were NO Repeats." + Environment.NewLine;
             bool FoundRepeat = false;
             Int64 Limit = bCipherTxt.Length - RepeatingOffset - 1;
             Int64 CalculatedRepeat = 0;
@@ -323,10 +342,13 @@ namespace Test_DLL_TomsRotaryCipher
                     CalculatedRepeat = l + RepeatingOffset;
                     long CipherTxtLen = bCipherTxt.Length;
                     decimal SafeMsgSpaceRatio = (Convert.ToDecimal(CalculatedRepeat) / Convert.ToDecimal(CipherTxtLen)) * 100;
-                    RepeatStrRtn += functionName + ", " + RepeatingOffset.ToString() + " char block sizes, pattern starting at pos. " + (CalculatedRepeat).ToString("N0") + ", Msg Space Ratio = " + SafeMsgSpaceRatio.ToString("0.##") + "%" + Environment.NewLine;
+                    RepeatStrRtn += functionName + ", " + RepeatingOffset.ToString() + " char block sizes, deck cut at " + StartSearch.ToString("N0") +  " pattern starting at pos. " + (CalculatedRepeat).ToString("N0") + ", Msg Space Ratio = " + SafeMsgSpaceRatio.ToString("0.##") + "%" + Environment.NewLine;
                     FoundRepeat = true;
                 }
             }
+
+            bCipherTxt = null;
+
             if (FoundRepeat.Equals(false))
             {
                 return NoRepeatStr;
