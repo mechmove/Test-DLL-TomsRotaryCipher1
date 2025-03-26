@@ -70,10 +70,11 @@ namespace Test_DLL_TomsRotaryCipher
             // Then select your Payload option (what will be get enciphered) : SingleLetterRepeat or Variable text.
             // Then run EncodeFirst with "true", then switch DLLs then change below from true to false and run again.
             // Or you may run with same DLL for a complete test.
-            bool EncodeFirst = true; // true = Encipher, outputs will get saved, then false = Decipher will compare outputs
+            bool EncodeFirst = false; // true = Encipher, outputs will get saved, then false = Decipher will compare outputs
             bool Do_Sequential_Test = true;
             bool Do_HopScotch_Test = true;
             bool Do_HidingInPlainSightReflector_Test = true;
+            int RepeatHidingInPlainSight = 1; // min value = 1
             bool Do_Extra_Tests = false; // these are independant tests, what ever you want to do
             bool Do_SingleLetterRepeat_Test = true; // if true, a single letter is used to detect "message space" or repeating patterns.
                                                     // if false, the payload will be various random characters, typical of a
@@ -84,8 +85,8 @@ namespace Test_DLL_TomsRotaryCipher
 
             Int32 PlainTxt = 1_000_000_000; // 1 Gig Byte message, this will take a while to process.
             //PlainTxt = 500_000_000;
-            //PlainTxt = 33_554_432;
-            PlainTxt = 131_072;
+            PlainTxt = 33_554_432;
+            //PlainTxt = 131_072;
 
             char SingleLetterRepeatTst = (char)'z';
 
@@ -102,8 +103,8 @@ namespace Test_DLL_TomsRotaryCipher
 
             if (Do_Extra_Tests)
             {
-                string CipherTextOutput = "CipherTextTestHopScotchEncode.bin";
-                //string CipherTextOutput = "CipherTextTestHSModeEncode.bin";
+                //string CipherTextOutput = "CipherTextTestHopScotchEncode.bin";
+                string CipherTextOutput = "CipherTextTestHSModeEncode.bin";
 
                 Console.Write("Analyzing FileName : " + CipherTextOutput + Environment.NewLine + Environment.NewLine);
                 Console.Write("Msg length=" + File.ReadAllBytes(CipherTextOutput).Length.ToString("N0") + Environment.NewLine + Environment.NewLine);
@@ -126,38 +127,43 @@ namespace Test_DLL_TomsRotaryCipher
             }
 
             if (EncodeFirst)
-            {   // first, get a set of keys that will be used for both DLLs:
-                oTRC.PopulateSeeds(); // populate regular seeds
-                oTRC.SetMovingCipherRotors(Rotors);
-                byte[] bAllSettings = oTRC.GetAll();
-                File.WriteAllBytes("AllSettings.bin", bAllSettings);
-                if (Do_SingleLetterRepeat_Test)
+            {   
+
+                for (int i=1;i<= RepeatHidingInPlainSight; i++)
                 {
-                    Console.Write("Single letter Repeat Test with letter (" + SingleLetterRepeatTst + ")" + Environment.NewLine + Environment.NewLine);
-                    string NewStr = new String(SingleLetterRepeatTst, PlainTxt);
-                    bIn = Encoding.ASCII.GetBytes(NewStr);
-                }
-                else
-                {
-                    Console.Write("Variable Pseudo-Random Payload" + Environment.NewLine + Environment.NewLine);
-                    RNGCryptoServiceProvider oRNG1 = new RNGCryptoServiceProvider();
-                    bIn = new byte[PlainTxt];
-                    oRNG1.GetBytes(bIn);
-                    oRNG1.Dispose();
-                }
+                    // first, get a set of keys that will be used for both DLLs:
+                    oTRC.PopulateSeeds(); // populate regular seeds
+                    oTRC.SetMovingCipherRotors(Rotors);
+                    byte[] bAllSettings = oTRC.GetAll();
+                    File.WriteAllBytes("AllSettings.bin", bAllSettings);
+                    if (Do_SingleLetterRepeat_Test)
+                    {
+                        Console.Write("Single letter Repeat Test with letter (" + SingleLetterRepeatTst + ")" + Environment.NewLine + Environment.NewLine);
+                        string NewStr = new String(SingleLetterRepeatTst, PlainTxt);
+                        bIn = Encoding.ASCII.GetBytes(NewStr);
+                    }
+                    else
+                    {
+                        Console.Write("Variable Pseudo-Random Payload" + Environment.NewLine + Environment.NewLine);
+                        RNGCryptoServiceProvider oRNG1 = new RNGCryptoServiceProvider();
+                        bIn = new byte[PlainTxt];
+                        oRNG1.GetBytes(bIn);
+                        oRNG1.Dispose();
+                    }
 
-                File.WriteAllBytes("bInput.bin", bIn);
+                    File.WriteAllBytes("bInput.bin", bIn);
 
-                localRotors = oTRC.oSettings.MovingCipherRotors;
-                localPlainTxt = bIn.Length;
-                bIn = new byte[0]; // free up memory
-                bAllSettings = new byte[0]; // free up memory
+                    localRotors = oTRC.oSettings.MovingCipherRotors;
+                    localPlainTxt = bIn.Length;
+                    bIn = new byte[0]; // free up memory
+                    bAllSettings = new byte[0]; // free up memory
 
-                Console.Write("For Rotors=" + localRotors.ToString("N0") + ", PlainTxt=" + localPlainTxt.ToString("N0") + Environment.NewLine + Environment.NewLine);
+                    Console.Write("For Rotors=" + localRotors.ToString("N0") + ", PlainTxt=" + localPlainTxt.ToString("N0") + Environment.NewLine + Environment.NewLine);
 
-                if (Do_SingleLetterRepeat_Test&& Do_HidingInPlainSightReflector_Test)
-                {
-                    HidingInPlainSight("bInput.bin", "AllSettings.bin", SingleLetterRepeatTst);
+                    if (Do_SingleLetterRepeat_Test&& Do_HidingInPlainSightReflector_Test)
+                    {
+                        HidingInPlainSight("bInput.bin", "AllSettings.bin", SingleLetterRepeatTst);
+                    }
                 }
 
                 if (Do_Sequential_Test)
@@ -225,7 +231,8 @@ namespace Test_DLL_TomsRotaryCipher
                 File.ReadAllBytes(input),
                 RotaryCipherMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
                 NoReflectorMode.Encipher,
-                CBCMode.None);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
+                CBCMode.None,
+                DebugMode.No);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
 
             File.WriteAllBytes(sCipherTxt, bCipherTxt); // save cipherText for later comparision
 
@@ -430,7 +437,8 @@ namespace Test_DLL_TomsRotaryCipher
             }
             else
             {
-                Console.Write("HidingInPlainSight (with " + localRotors.ToString() + " rotors) : [test was a FAILURE]!" + Environment.NewLine + Environment.NewLine);
+                Console.Write("HidingInPlainSight (with " + localRotors.ToString() + " rotors) : " + SingleLtr + " NOT found [test was inconclusive]!" + Environment.NewLine + Environment.NewLine);
+
             }
             CipherTxt = string.Empty;
             oTRC = null;
