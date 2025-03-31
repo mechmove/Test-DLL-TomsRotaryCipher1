@@ -231,7 +231,7 @@ namespace Test_DLL_TomsRotaryCipher
                 File.ReadAllBytes(input),
                 RotaryCipherMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
                 NoReflectorMode.Encipher,
-                CBCMode.None,
+                CBCMode.None,// Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
                 DebugMode.No);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
 
             File.WriteAllBytes(sCipherTxt, bCipherTxt); // save cipherText for later comparision
