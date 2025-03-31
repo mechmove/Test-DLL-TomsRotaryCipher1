@@ -70,7 +70,7 @@ namespace Test_DLL_TomsRotaryCipher
             // Then select your Payload option (what will be get enciphered) : SingleLetterRepeat or Variable text.
             // Then run EncodeFirst with "true", then switch DLLs then change below from true to false and run again.
             // Or you may run with same DLL for a complete test.
-            bool EncodeFirst = false; // true = Encipher, outputs will get saved, then false = Decipher will compare outputs
+            bool EncodeFirst = true; // true = Encipher, outputs will get saved, then false = Decipher will compare outputs
             bool Do_Sequential_Test = true;
             bool Do_HopScotch_Test = true;
             bool Do_HidingInPlainSightReflector_Test = true;
@@ -86,7 +86,7 @@ namespace Test_DLL_TomsRotaryCipher
             Int32 PlainTxt = 1_000_000_000; // 1 Gig Byte message, this will take a while to process.
             //PlainTxt = 500_000_000;
             PlainTxt = 33_554_432;
-            //PlainTxt = 131_072;
+            PlainTxt = 131_072;
 
             char SingleLetterRepeatTst = (char)'z';
 
@@ -231,8 +231,8 @@ namespace Test_DLL_TomsRotaryCipher
                 File.ReadAllBytes(input),
                 RotaryCipherMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
                 NoReflectorMode.Encipher,
-                CBCMode.None,// Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
-                DebugMode.No);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
+                CBCMode.None,// Cipher Block Chaining introduces recursion with XOR for more security. If Yes, any direction will work.
+                DebugMode.No);
 
             File.WriteAllBytes(sCipherTxt, bCipherTxt); // save cipherText for later comparision
 
@@ -255,7 +255,8 @@ namespace Test_DLL_TomsRotaryCipher
                 File.ReadAllBytes(sCipherTxt),
                 RotaryCipherMode.NoReflector,
                 NoReflectorMode.Decipher,
-                CBCMode.None);
+                CBCMode.None,
+                DebugMode.No);
 
             oTRC_Alice = null;
 
@@ -280,7 +281,7 @@ namespace Test_DLL_TomsRotaryCipher
                 File.ReadAllBytes(input),
                 RotaryCipherMode.NoReflector, // best security, using Reflector omits character ID. (Note, the Reflector option is included for educational and historical reasons)
                 NoReflectorMode.Encipher,
-                CBCMode.None);  // Cipher Block Chaining introduces recursion with XOR for more security. Any direction will work.
+                CBCMode.None); 
 
             if (bSingleLetterRepeat_Test)
             {
@@ -398,14 +399,9 @@ namespace Test_DLL_TomsRotaryCipher
                 RotaryCipherMode.WithReflector,
                 NoReflectorMode.None, // direction not selectable as data must travel in both directions, speed is also compromised.
                 CBCMode.None,// leave off CBC mode for this test
-                DebugMode.Yes);
+                DebugMode.No);
 
-            string CipherTxt = Encoding.Default.GetString(bCipherTxt);
-            bCipherTxt = new byte[0]; // free up memory
-
-            //File.WriteAllText("test", CipherTxt);
-
-            if (CipherTxt.IndexOf(SingleLtr) < 0)
+            if (FindLtr(bCipherTxt, SingleLtr).Equals(0))
             {
                 Console.Write("HidingInPlainSight (with " + localRotors.ToString() + " rotors) : " + SingleLtr + " not found [test was a SUCCESS]!" + Environment.NewLine);
             }
@@ -414,11 +410,29 @@ namespace Test_DLL_TomsRotaryCipher
                 Console.Write("HidingInPlainSight (with " + localRotors.ToString() + " rotors) : [test was a FAILURE]!" + Environment.NewLine);
             }
 
-            CipherTxt = string.Empty;
+            /*
+             * run a DECODE test to make sure it matches source
+             */
+
+            bCipherTxt = oTRC.SAES(NotchPlan.Sequential,
+                bCipherTxt, // plaintext, repeated SingleLtr
+                RotaryCipherMode.WithReflector,
+                NoReflectorMode.None, // direction not selectable as data must travel in both directions, speed is also compromised.
+                CBCMode.None,// leave off CBC mode for this test
+                DebugMode.No);
+
+            if (File.ReadAllBytes(input).SequenceEqual(bCipherTxt))
+            {
+                Console.Write("HidingInPlainSight (with " + localRotors.ToString() + " rotors) : " + SingleLtr + " [DECODE test was a SUCCESS]!" + Environment.NewLine);
+            }
+            else
+            {
+                Console.Write("HidingInPlainSight (with " + localRotors.ToString() + " rotors) : " + SingleLtr + " [DECODE test was a FAILURE]!" + Environment.NewLine);
+            }
 
             /*
-             * rerun same test, but this time without reflector, and see the letter 's' return.
-             * (Note without Reflector, encryption is much faster, since the letter 's'
+             * rerun same test, but this time without reflector, and see the letter 'z' return.
+             * (Note without Reflector, encryption is much faster, since the letter 'z'
              * does not have to return in opposite direction, the process is 50% faster)
              */
 
@@ -426,12 +440,10 @@ namespace Test_DLL_TomsRotaryCipher
                 File.ReadAllBytes(input), // plaintext, repeated letter
                 RotaryCipherMode.NoReflector,
                 NoReflectorMode.Encipher,
-                CBCMode.None); // leave off CBC mode for this test
+                CBCMode.None,// leave off CBC mode for this test
+                DebugMode.No);
 
-            CipherTxt = Encoding.Default.GetString(bCipherTxt);
-            bCipherTxt = new byte[0]; // free up memory
-
-            if (CipherTxt.IndexOf(SingleLtr) > 0)
+            if (FindLtr(bCipherTxt, SingleLtr).Equals((char)SingleLtr))
             {
                 Console.Write("HidingInPlainSight (with " + localRotors.ToString() + " rotors) : " + SingleLtr + " found [test was a SUCCESS]!" + Environment.NewLine + Environment.NewLine);
             }
@@ -440,8 +452,15 @@ namespace Test_DLL_TomsRotaryCipher
                 Console.Write("HidingInPlainSight (with " + localRotors.ToString() + " rotors) : " + SingleLtr + " NOT found [test was inconclusive]!" + Environment.NewLine + Environment.NewLine);
 
             }
-            CipherTxt = string.Empty;
+
+            bCipherTxt = new byte[0]; // free up memory
+
             oTRC = null;
+        }
+
+        private static int FindLtr (byte[] bCipherTxt, char SingleLtr)
+        {
+            return bCipherTxt.Distinct().ToArray().Where(x => x == SingleLtr).FirstOrDefault();
         }
     }
 }
