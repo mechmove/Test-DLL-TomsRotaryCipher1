@@ -53,7 +53,7 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="True security of TomsRotaryCipher during a bruteforce attack.doc" />
+    <None Include="True security of TomsRotaryCipher during a bruteforce attack.docx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
